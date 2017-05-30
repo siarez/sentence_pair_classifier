@@ -70,22 +70,23 @@ v2 = tf.reduce_sum(v2j, axis=0)
 v1_v2 = tf.concat([v1, v2], 0)
 v1_v2_1 = tf.reshape(v1_v2, [1, 600])
 
-y = tf.layers.dense(inputs=v1_v2_1, units=1, activation=tf.nn.sigmoid, use_bias=True,
+y = tf.layers.dense(inputs=v1_v2_1, units=2, activation=None, use_bias=True,
                 kernel_initializer=None, bias_initializer=None,
                      name='H')
 
-#onehot_labels = tf.one_hot(indices=tf.cast(label, tf.int32), depth=1)
-onehot_labels = tf.reshape(label, [1, 1])
-#loss = tf.losses.softmax_cross_entropy(onehot_labels=onehot_labels, logits=y)
+onehot_labels = tf.one_hot(indices=tf.cast(label, tf.int32), depth=2)
+#onehot_labels = tf.reshape(label, [1, 1])
+loss = tf.losses.softmax_cross_entropy(onehot_labels=onehot_labels, logits=y)
 
-loss = tf.square(tf.reduce_sum(y - onehot_labels))
+#loss = tf.square(tf.reduce_sum(y - onehot_labels))
 tf.summary.scalar('loss', loss)
 
 train_op = tf.contrib.layers.optimize_loss(
     loss=loss,
     global_step=tf.contrib.framework.get_global_step(),
     learning_rate=0.001,
-    optimizer="SGD")
+    optimizer="SGD",
+    summaries=["loss", "gradients"])
 
 
 
@@ -148,16 +149,19 @@ with tf.Session() as sess:
     start_time = time.time()
 
     for i in tqdm(range(len(train_df))):
-        a_feed = test_df['question1_vecs'][i]
-        b_feed = test_df['question2_vecs'][i]
+        a_feed = train_df['question1_vecs'][i]
+        b_feed = train_df['question2_vecs'][i]
 
         if len(a_feed) < 1 or len(b_feed) < 1:
             continue
-        label_feed = np.array([test_df['is_duplicate'][i]])
+        label_feed = np.array([train_df['is_duplicate'][i]])
+
+        #a_feed[0][0] = float(label_feed[0]) #cheat hint
+
         summ, train_op1, losss, y2, one_hots = \
             sess.run([summaries, train_op, loss, y, onehot_labels], {a: a_feed, b: b_feed, label: label_feed})
         if i % 200 == 0:
             writer.add_summary(summ, global_step=i)
         if i % 1000 == 0:
-            print('it: ', i, losss)
+            print('it: ', i, losss, )
             #start_time = time.time()
