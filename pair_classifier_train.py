@@ -82,6 +82,7 @@ else:
 
 
 log_dir = 'log'
+save_dir = 'save'
 model = Model('TRAIN')
 init_op = tf.global_variables_initializer()
 
@@ -92,57 +93,55 @@ with tf.Session() as sess:
     writer_eval = tf.summary.FileWriter(os.path.join(log_dir, 'eval', time.strftime("%Y-%m-%d-%H-%M-%S")))
     writer.add_graph(sess.graph)
     sess.run(init_op)
+    # Create a saver object which will save all the variables
+    saver = tf.train.Saver()
 
     a_feed = np.random.rand(3, 300)
     b_feed = np.random.rand(5, 300)
     label_feed = np.array([0])
 
-    #accuracy = []
+    for epoch in range(10):
+        for i in tqdm(range(len(train_df))):
+        #for i in tqdm(range(5000)):
+            a_feed = train_df['question1_vecs'][i]
+            b_feed = train_df['question2_vecs'][i]
 
-    #for i in tqdm(range(len(train_df))):
-    for i in tqdm(range(50000)):
-        a_feed = train_df['question1_vecs'][i]
-        b_feed = train_df['question2_vecs'][i]
+            if len(a_feed) < 1 or len(b_feed) < 1:
+                continue
+            label_feed = np.array([train_df['is_duplicate'][i]])
+            #label_feed = np.random.randint(2, size=1)
+            #a_feed[0][0] = float(label_feed[0]) #cheat hint
 
-        if len(a_feed) < 1 or len(b_feed) < 1:
-            continue
-        label_feed = np.array([train_df['is_duplicate'][i]])
-        #label_feed = np.random.randint(2, size=1)
-        #a_feed[0][0] = float(label_feed[0]) #cheat hint
+            summ, train_op, loss = \
+                sess.run([model.loss_summary, model.train_op, model.loss], {model.a: a_feed, model.b: b_feed, model.label: label_feed})
+            if i % 200 == 0:
+                writer.add_summary(summ, global_step=i * (1 + epoch))
+            if i % 500 == 0:
+                print('it: ', i, loss, )
 
-        summ, train_op, loss = \
-            sess.run([model.loss_summary, model.train_op, model.loss], {model.a: a_feed, model.b: b_feed, model.label: label_feed})
-        if i % 200 == 0:
-            writer.add_summary(summ, global_step=i)
-        if i % 500 == 0:
-            print('it: ', i, loss, )
+            if i % 50000 == 0:
+                print('\nRunning validation')
+                sess.run(tf.assign(model.accuracy, tf.constant(0.0)))
+                sess.run(tf.assign(model.validation_iter, tf.constant(1)))
+                #test_results = []
+                random_sample = test_df.sample(n=1000, replace=True)
+                for j in (range(len(random_sample))):
+                    a_feed = random_sample['question1_vecs'].values[j]
+                    b_feed = random_sample['question2_vecs'].values[j]
+                    label_feed = np.array([random_sample['is_duplicate'].values[j]])
+                    is_duplicate_prediction, accuracy_summ, accuracy, my_iter = \
+                        sess.run([model.classes, model.accuracy_summary_op, model.accuracy_op, model.validation_iter_op],
+                                 {model.a: a_feed, model.b: b_feed, model.label: label_feed})
+                writer_eval.add_summary(accuracy_summ, global_step=i * (1 + epoch))
+                print(accuracy, my_iter)
 
-        if i % 1000 == 0:
-            print('\nRunning validation')
-            sess.run(tf.assign(model.accuracy, tf.constant(0.0)))
-            sess.run(tf.assign(model.validation_iter, tf.constant(1)))
-            #test_results = []
-            random_sample = test_df.sample(n=200, replace=True)
-            for j in (range(len(random_sample))):
-                a_feed = random_sample['question1_vecs'].values[j]
-                b_feed = random_sample['question2_vecs'].values[j]
-                label_feed = np.array([random_sample['is_duplicate'].values[j]])
-                is_duplicate_prediction, accuracy_summ, accuracy, my_iter = \
-                    sess.run([model.classes, model.accuracy_summary_op, model.accuracy_op, model.validation_iter_op],
-                             {model.a: a_feed, model.b: b_feed, model.label: label_feed})
-                #test_results.append(is_duplicate_prediction[0][0])
-            #test_results = pd.Series(test_results)
-            #answers = random_sample['is_duplicate'].values
-            #scores = (test_results == answers)
-            # accuracy.append(scores.sum() / len(scores))
-            # print('accuracy: ', accuracy[-1])
-            writer_eval.add_summary(accuracy_summ, global_step=i)
-            print(accuracy, my_iter)
-
-    print('accuracies: ', accuracy)
+        # save checkpoint after each epoch
+        checkpoint_path = os.path.join(save_dir, 'model.ckpt')
+        saver.save(sess, checkpoint_path, global_step=epoch)
+        print("model saved to {}".format(checkpoint_path))
 
 
-    # todo: save model after training
+
 
 
 
