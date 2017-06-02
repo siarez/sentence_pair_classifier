@@ -79,15 +79,20 @@ with tf.Session() as sess:
 
     '''   Start inference on the real test data   '''
     results = []
+    results_prob = []
     for i in tqdm(range(len(real_test_df))):
-    #for i in tqdm(range(6000)):
+    #for i in tqdm(range(60)):
         a_feed = real_test_df['question1_vecs'][i]
         b_feed = real_test_df['question2_vecs'][i]
-        is_duplicate = sess.run(model.classes, {model.a: a_feed, model.b: b_feed})
+        is_duplicate, prob = sess.run([model.classes, model.probabilities], {model.a: a_feed, model.b: b_feed})
         results.append(is_duplicate[0][0])
+        results_prob.append(prob[0][1])
         # if i % 1 == 0:
         #     print('it: ', i, is_duplicate[0][0])
     del real_test_df
 
 submission = pd.DataFrame({'test_id': range(len(results)), 'is_duplicate': results})
 submission.to_csv('submission.csv', encoding='utf-8', columns=['test_id', 'is_duplicate'], index=False)
+
+submission_prob = pd.DataFrame({'test_id': range(len(results_prob)), 'is_duplicate': results_prob})
+submission_prob.to_csv('submission_prob.csv', encoding='utf-8', columns=['test_id', 'is_duplicate'], index=False)
