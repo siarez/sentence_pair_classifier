@@ -57,7 +57,7 @@ class Model():
         v1_v2 = tf.concat([v1, v2], 0)
         v1_v2_1 = tf.reshape(v1_v2, [1, 600])
 
-        y1 = tf.layers.dense(inputs=v1_v2_1, units=200, activation=tf.nn.relu, use_bias=True,
+        y1 = tf.layers.dense(inputs=v1_v2_1, units=600, activation=tf.nn.relu, use_bias=True,
                              kernel_initializer=None, bias_initializer=None,
                              name='H1')
         self.logits = tf.layers.dense(inputs=y1, units=2, activation=None, use_bias=True,
@@ -66,10 +66,13 @@ class Model():
 
         self.loss = None
         self.train_op = None
+        self.probabilities = tf.nn.softmax(self.logits, name="softmax_tensor")
+
         # Calculate Loss (for both TRAIN and EVAL modes)
         if self.mode != "INFER":
             onehot_labels = tf.one_hot(indices=tf.cast(self.label, tf.int32), depth=2)
-            self.loss = tf.losses.softmax_cross_entropy(onehot_labels=onehot_labels, logits=self.logits)
+            #self.loss = tf.losses.softmax_cross_entropy(onehot_labels=onehot_labels, logits=self.logits)
+            self.loss = tf.losses.log_loss(onehot_labels, self.probabilities)
             self.loss_summary = tf.summary.scalar('loss', self.loss)
 
         # Configure the Training Op (for TRAIN mode)
@@ -80,7 +83,7 @@ class Model():
                 learning_rate=0.001, optimizer="SGD")
 
         self.classes = tf.argmax(input=self.logits, axis=1),
-        self.probabilities = tf.nn.softmax(self.logits, name="softmax_tensor")
+
 
         self.accuracy_op = self.accuracy.assign((self.accuracy * (tf.cast(self.validation_iter, dtype=tf.float32) - tf.constant(1.0)) +
                     (tf.reduce_sum(tf.cast(tf.equal(self.classes, tf.cast(self.label, tf.int64)), dtype=tf.float32)))) \

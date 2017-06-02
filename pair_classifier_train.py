@@ -115,7 +115,7 @@ with tf.Session() as sess:
             summ, train_op, loss = \
                 sess.run([model.loss_summary, model.train_op, model.loss], {model.a: a_feed, model.b: b_feed, model.label: label_feed})
             if i % 1000 == 0:
-                writer.add_summary(summ, global_step=i * (1 + epoch))
+                writer.add_summary(summ, global_step=(i + 1) * (1 + epoch))
 
             if i % 50000 == 0:
                 print('\nRunning validation')
@@ -130,7 +130,7 @@ with tf.Session() as sess:
                     is_duplicate_prediction, accuracy_summ, accuracy, my_iter = \
                         sess.run([model.classes, model.accuracy_summary_op, model.accuracy_op, model.validation_iter_op],
                                  {model.a: a_feed, model.b: b_feed, model.label: label_feed})
-                writer_eval.add_summary(accuracy_summ, global_step=i * (1 + epoch))
+                writer_eval.add_summary(accuracy_summ, global_step=(i + 1) * (1 + epoch))
                 print(accuracy, my_iter)
 
         # save checkpoint after each epoch
