@@ -45,7 +45,7 @@ def add_embedded_sentences(df, word_vec_dict):
 
 '''          Building/Loading training data          '''
 test_df_pickle = 'test1_with_scores_vec.pkl'
-train_df_pickle = 'train1_with_scores_vec.pkl'
+train_df_pickle = 'train_with_scores_vec.pkl'
 
 if os.path.isfile(test_df_pickle) and os.path.isfile(train_df_pickle):
     print('loading pickles')
@@ -53,7 +53,7 @@ if os.path.isfile(test_df_pickle) and os.path.isfile(train_df_pickle):
     train_df = pd.read_pickle(train_df_pickle)
 else:
     print('processing & pickling CSVs')
-    train_df = pd.read_csv('./train1.csv', encoding="utf-8")
+    train_df = pd.read_csv('./train.csv', encoding="utf-8")
     test_df = pd.read_csv('./test1.csv', encoding="utf-8")
     train_df = train_df[['question1', 'question2', 'is_duplicate']]
     test_df = test_df[['question1', 'question2', 'is_duplicate']]
@@ -100,7 +100,7 @@ with tf.Session() as sess:
     b_feed = np.random.rand(5, 300)
     label_feed = np.array([0])
 
-    for epoch in range(10):
+    for epoch in range(50):
         for i in tqdm(range(len(train_df))):
         #for i in tqdm(range(5000)):
             a_feed = train_df['question1_vecs'][i]
@@ -114,17 +114,15 @@ with tf.Session() as sess:
 
             summ, train_op, loss = \
                 sess.run([model.loss_summary, model.train_op, model.loss], {model.a: a_feed, model.b: b_feed, model.label: label_feed})
-            if i % 200 == 0:
+            if i % 1000 == 0:
                 writer.add_summary(summ, global_step=i * (1 + epoch))
-            if i % 500 == 0:
-                print('it: ', i, loss, )
 
             if i % 50000 == 0:
                 print('\nRunning validation')
                 sess.run(tf.assign(model.accuracy, tf.constant(0.0)))
                 sess.run(tf.assign(model.validation_iter, tf.constant(1)))
                 #test_results = []
-                random_sample = test_df.sample(n=1000, replace=True)
+                random_sample = test_df.sample(n=2000, replace=True)
                 for j in (range(len(random_sample))):
                     a_feed = random_sample['question1_vecs'].values[j]
                     b_feed = random_sample['question2_vecs'].values[j]
