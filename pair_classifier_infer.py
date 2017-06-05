@@ -40,6 +40,7 @@ checkpoint_dir = 'save'
 ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
 assert ckpt, "No checkpoint found"
 assert ckpt.model_checkpoint_path, "No model path found in checkpoint"
+print("Using checkpoint: {}".format(ckpt.model_checkpoint_path[-2:]))
 
 real_test_filename = 'test.csv'
 real_test_df_pickle = 'test_with_scores_vec.pkl'
@@ -92,7 +93,7 @@ with tf.Session() as sess:
     del real_test_df
 
 submission = pd.DataFrame({'test_id': range(len(results)), 'is_duplicate': results})
-submission.to_csv('submission.csv', encoding='utf-8', columns=['test_id', 'is_duplicate'], index=False)
+submission.to_csv('submission_{}.csv'.format(ckpt.model_checkpoint_path[-2:]), encoding='utf-8', columns=['test_id', 'is_duplicate'], index=False)
 
 submission_prob = pd.DataFrame({'test_id': range(len(results_prob)), 'is_duplicate': results_prob})
-submission_prob.to_csv('submission_prob.csv', encoding='utf-8', columns=['test_id', 'is_duplicate'], index=False)
+submission_prob.to_csv('submission_prob_{}.csv'.format(ckpt.model_checkpoint_path[-2:]), encoding='utf-8', columns=['test_id', 'is_duplicate'], index=False)
