@@ -31,8 +31,8 @@ class Model(object):
                                  name='F2', reuse=True)
 
             attention_weights = tf.matmul(Fa, Fb, transpose_b=True, name='attention_weights')
-            attention_soft1 = tf.nn.softmax(attention_weights, name='attention_soft')
-            attention_soft2 = tf.nn.softmax(tf.transpose(attention_weights), name='attention_soft')
+            attention_soft1 = tf.nn.softmax(attention_weights, name='attention_soft1')
+            attention_soft2 = tf.nn.softmax(tf.transpose(attention_weights), name='attention_soft2')
 
             beta = tf.matmul(attention_soft1, self.b)
             alpha = tf.matmul(attention_soft2, self.a)
