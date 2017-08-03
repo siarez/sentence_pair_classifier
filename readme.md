@@ -5,7 +5,7 @@ The original paper has used the model on the Stanford Natural Language Inference
 I adapted this model to compete in [Quora Question Pairs on Kaggle](https://www.kaggle.com/c/quora-question-pairs)
 
 There are three main files:
-1. **pair_classifier_model.py** defines a class that create the model's graph. The paper has not described their model in complete detail. So it may differ in some ways, but I believe it captures the essence of what is described in the paper. 
+1. **pair_classifier_model.py** defines a class that creates the model's graph. The paper has not described their model in complete detail. So it may differ in some ways, but I believe it captures the essence of what is described in the paper. 
     
 2. **pair_classifier_train.py** loads and prepares training and validation datasets and iterates through question pairs one by one. It also saves model checkpoints in ./save directory, and produces a log on ./log for viewing in Tensorboard. No batching has been implemented. 
  
